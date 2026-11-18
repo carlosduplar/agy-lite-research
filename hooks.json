@@ -1,0 +1,16 @@
+{
+  "research-flash-lite": {
+    "PreToolUse": [
+      {
+        "matcher": "invoke_subagent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c 'import json, sys\ntry:\n payload = json.loads(sys.stdin.read() or \"{}\")\nexcept Exception:\n payload = {}\nargs = (payload.get(\"toolCall\") or {}).get(\"args\") or {}\nif args.get(\"TypeName\") == \"research\" and args.get(\"Model\") != \"flash_lite\":\n print(json.dumps({\"decision\": \"allow\", \"overwrite\": {\"Model\": \"flash_lite\"}}))\nelse:\n print(json.dumps({\"decision\": \"allow\"}))'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
