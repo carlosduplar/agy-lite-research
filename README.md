@@ -2,7 +2,7 @@
 
 A deterministic `PreToolUse` hook, Python helper script, and agent configuration suite for Google Antigravity that rewrites `invoke_subagent` calls targeting the `research` subagent to `Model: "flash_lite"` (`gemini-3.5-flash-lite`) before execution.
 
-Empirically saves **~2.5x to 2.7x** quota compared to running subagents on default frontier models (`Gemini 4 Hydrogen (High)`).
+Empirically saves **~2.5x to 2.7x** quota compared to running subagents on Gemini 4 Hydrogen (High).
 
 ---
 
@@ -10,13 +10,13 @@ Empirically saves **~2.5x to 2.7x** quota compared to running subagents on defau
 
 Antigravity's `invoke_subagent` tool schema defaults its `Model` parameter to `'inherit'` (`['inherit', 'flash_lite', 'flash', 'pro']`). The system prompt instructs parent agents to default to `'inherit'` unless explicitly requested otherwise.
 
-When you work with a frontier model like `Gemini 4 Hydrogen (High)`, any `invoke_subagent` call passing `Model: "inherit"` **overrides the subagent's frontmatter configuration** (e.g. `model: Gemini 3.8 Flash (High)` in `research.md`). As a result, read-heavy exploratory subagent tasks inadvertently inherit and drain your primary frontier model quota.
+When you work with a model like `Gemini 4 Hydrogen (High)`, any `invoke_subagent` call passing `Model: "inherit"` **overrides the subagent's frontmatter configuration** (e.g. `model: Gemini 3.8 Flash (High)` in `research.md`). As a result, read-heavy exploratory subagent tasks inadvertently inherit and drain your primary frontier model quota.
 
 Because models frequently overlook prompt instructions not to pass `'inherit'`, this lifecycle hook intercepts `invoke_subagent` deterministically at the engine level, replacing `Model` with `"flash_lite"` before the subagent container is launched.
 
 ---
 
-## Empirical Benchmark Results (Session `d321135c-6b2d-4187-98a3-d7c5be404512`)
+## Empirical Benchmark Results
 
 A deterministic 3-way A/B/C benchmark was conducted on an identical, heavy 6-document comparative synthesis task across Antigravity's internal customization documentation (`hooks.md`, `json_configs.md`, `mcp_servers.md`, `plugins.md`, `rules.md`, `skills.md` — ~33KB source text).
 
@@ -24,7 +24,6 @@ Each run invoked `invoke_subagent(TypeName="research", Model="inherit")` after a
 
 | Metric | Run A (`flash_lite`) | Run B (`inherit`, hook off) | Run C (`flash`) |
 | :--- | :--- | :--- | :--- |
-| **Subagent Conversation ID** | `9552df30-5676-4835-b137-df1878988bac` | `5033a747-5764-4dc4-a048-9b8a14fcaf78` | `cb4a1972-edc6-4235-a529-8fc171b0cbb9` |
 | **Hook Overwrite** | `Model: "flash_lite"` | *(disabled)* | `Model: "flash"` |
 | **Observed `PLANNER_RESPONSE.model`** | `gemini-3.5-flash-lite` | `gemini-4-hydrogen-high` | `gemini-4-hydrogen-tiered-high` |
 | **Subagent Turns** | `17` *(attempted file writes)* | `5` *(stopped on read-only)* | `5` *(stopped on read-only)* |
@@ -64,26 +63,6 @@ This repository includes refined definitions for both primary subagents:
 - **Tools**: Write enabled (`enable_write_tools: true`).
 - **Hook Policy**: **NOT forced to `flash_lite`**. `gemini-3.5-flash-lite` has higher error rates on exact-match whitespace diffs (`edit_file`) and recovery loops. To avoid file corruption or looping edits, `worker` remains on `flash` / parent model.
 - **Guardrails**: Added strict pre-edit inspection (`read_file` first to copy whitespace byte-for-byte), scoped edits, and an explicit **fail visibly** policy that forbids speculative workarounds.
-
----
-
-## Script Architecture (`scripts/research-flash-lite.py`)
-
-The standalone Python script [scripts/research-flash-lite.py](./scripts/research-flash-lite.py) replaces earlier inline shell commands:
-
-- **OS-Agnostic & Zero-Quotes**: Operates without complex escaping under Windows `cmd.exe /c`, WSL, Linux `sh -c`, macOS, and Termux.
-- **Standard Library Only**: Uses only `json` and `sys`.
-- **Configurable Target**: Accepts an optional CLI argument (`sys.argv[1]`) matching `{"flash_lite", "flash", "pro", "inherit"}` (defaults to `"flash_lite"`).
-- **Safe Parsing**: Gracefully handles empty stdin or malformed JSON payloads.
-
-```python
-# Payload evaluation logic
-args = (payload.get("toolCall") or {}).get("args") or {}
-if args.get("TypeName") == "research" and args.get("Model") != target_model:
-    print(json.dumps({"decision": "allow", "overwrite": {"Model": target_model}}))
-else:
-    print(json.dumps({"decision": "allow"}))
-```
 
 ---
 
