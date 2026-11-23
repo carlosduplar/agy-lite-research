@@ -141,6 +141,39 @@ echo '{"toolCall":{"args":{"TypeName":"research","Model":"pro"}}}' | python3 scr
 
 ---
 
+## Verifying Savings: End-to-End Test
+
+To observe and independently verify the hook and quota savings in your own environment:
+
+### 1. Note Starting Quota
+In your terminal or interactive Antigravity session, check your quota baseline:
+```text
+/usage
+```
+*(Record your 5-Hour and Weekly limits for your active model pool.)*
+
+### 2. Run the Verification Prompt
+Execute an isolated dispatch that assigns a multi-file exploration task to the `research` subagent:
+
+**Via CLI (`agy -p`):**
+```bash
+agy -p "Invoke the research subagent to thoroughly explore all documentation, configuration, and agent files in this repository. Have it inspect each file and return a concise architectural summary. Do not read the files directly in the parent session."
+```
+
+**Via Interactive Chat:**
+> "Invoke the `research` subagent to survey and synthesize the architecture of this repository across all markdown files and agent configurations. Have it inspect each file and return a concise summary. Do not read the files directly in the main agent."
+
+### 3. Confirm Model Rewriting & Usage
+1. **Hook Interception**: When the parent executes `invoke_subagent`, the `PreToolUse` hook intercepts the call and rewrites `Model` to `"flash_lite"`.
+2. **Transcript Verification**: Inspect the subagent log in `<appDataDir>/brain/<subagent-id>/.system_generated/logs/transcript.jsonl` to confirm `gemini-3.5-flash-lite` in `PLANNER_RESPONSE.model`.
+3. **Check `/usage` Post-Run**:
+   ```text
+   /usage
+   ```
+   Compare the difference: despite reading multiple complete files, the `research` subagent consumed `< 0.01%` of general quota and `0.00%` of Argon/Claude quota, preserving your frontier model pool.
+
+---
+
 ## Requirements
 
 - Python 3.8+ on `PATH` (`python3` or `python`).
