@@ -1,6 +1,6 @@
 # antigravity-research-flash-lite
 
-A deterministic `PreToolUse` hook, Python helper script, and agent configuration suite for Google Antigravity that rewrites `invoke_subagent` calls targeting **only the `research` subagent** to `Model: "flash_lite"` (`gemini-3.5-flash-lite`) before execution.
+A deterministic `PreToolUse` hook, Python helper script, and agent configuration plugin for Google Antigravity that rewrites `invoke_subagent` calls targeting **only the `research` subagent** from `Model: "inherit"` to `Model: "flash_lite"` (`gemini-3.5-flash-lite`) before execution—while still respecting explicit non-`inherit` overrides (such as `Model: "pro"`).
 
 > [!NOTE]
 > **Scope of savings**: Quota savings apply **strictly to delegated `research` subagent calls** (`TypeName="research"`). Your primary session turns, `worker` edits, `self` subagents, and non-`research` tool calls continue consuming your selected frontier model quota as usual. Actual overall session savings depend on how much read-heavy exploration you delegate to `research`.
@@ -17,7 +17,7 @@ Antigravity's `invoke_subagent` tool schema defaults its `Model` parameter to `'
 
 When your main session uses a frontier model such as `Gemini 4 Hydrogen (High)`, `Gemini 4 Neon (High)`, `Gemini 4 Argon (High)`, or `Claude Opus 5.5 (Medium)`, any `invoke_subagent(TypeName="research", Model="inherit")` call **overrides `research.md`'s frontmatter model** (`model: flash_lite`). As a result, read-heavy exploratory `research` calls inadvertently inherit and drain your primary frontier model quota.
 
-Because parent models frequently overlook prompt instructions not to pass `'inherit'`, this lifecycle hook intercepts `invoke_subagent` deterministically at the engine level, replacing `Model` with `"flash_lite"` **only when `TypeName == "research"`**. Other subagents (`worker`, `self`, etc.) are left untouched.
+Because parent models frequently overlook prompt instructions not to pass `'inherit'`, this lifecycle hook intercepts `invoke_subagent` deterministically at the engine level, replacing `Model` with `"flash_lite"` **only when `TypeName == "research"` and `Model` is unset or `"inherit"`**. Explicit overrides (e.g., `Model: "pro"`) and other subagents (`worker`, `self`, etc.) are left untouched unless `--force` is enabled.
 
 ---
 
@@ -41,17 +41,17 @@ Each run invoked `invoke_subagent(TypeName="research", Model="inherit")` with li
 3. **Fresh-session A/B multipliers on `Hydrogen` (`2.67x`) & `Neon` (`4.26x`)**:
    In isolated `agy -p` single-dispatch runs (one parent turn delegating to `research`), enabling the plugin reduced 5-Hour drain from `-0.40%` to `-0.15%` (**2.67x**, Weekly `-0.11%` → `-0.05%` = **2.20x**) on `Gemini 4 Hydrogen (High)`, and from `-1.32%` to `-0.31%` (**4.26x**, Weekly `-0.38%` → `-0.09%` = **4.22x**) on `Gemini 4 Neon (High)`. These multipliers reflect a `research`-heavy single dispatch; sessions with fewer `research` calls or heavy parent/worker coding will see proportionally smaller overall savings.
 4. **Hardened `agents/research.md` configuration**:
-   The plugin also includes a hardened `agents/research.md` definition with explicit read-only instructions (`enable_write_tools: false`, return strictly via `send_message`). As observed during benchmarking, this prevents `research` from attempting tool workarounds on ambiguous tasks. Meanwhile, `agents/worker.md` intentionally remains unhooked on `flash` / parent model.
+   The plugin includes a hardened `agents/research.md` definition with explicit read-only instructions (`enable_write_tools: false`, return strictly via `send_message`) and tighter turn/timeout ceilings to prevent runaway retry loops. Meanwhile, `agents/worker.md` intentionally remains unhooked on `flash` / parent model.
 
 ### Estimated Overall Session Impact
 
 > [!IMPORTANT]
 > The measured benchmark multipliers above apply **to `research` subagent dispatches ONLY**—primary parent turns, `worker`, and `self` subagents still bill against your selected model quota.
 
-Because Google does not publish an Antigravity-wide breakdown of `research` vs. main-agent quota usage, total session impact depends on how much of your workflow is delegated to `research` rather than handled directly by the parent agent. Grounded in Microsoft's [*FastContext* paper](https://arxiv.org/abs/2606.14066) (**46.5%** of main-agent tokens and **56.2%** of tool turns spent reading/searching code), scaling the measured per-model `research` multipliers gives:
+Because Google does not publish an Antigravity-wide breakdown of `research` vs. main-agent quota usage, total session impact depends on how much of your workflow is delegated to `research` rather than handled directly by the parent agent. Scaling the measured per-model `research` multipliers gives:
 
-- **Small repos / targeted edits** (~10% `research` share): estimated total gains of **~22% on Hydrogen**, **~32% on Argon**, and **~44% on Neon**.
-- **Unfamiliar repos / exploration-heavy workflows** (~50% `research` share): estimated total gains up to **~1.1x on Hydrogen**, **~1.63x on Argon**, and **~2.1x on Neon** *(plus secondary prompt-cache savings from keeping bulky reads out of the parent context)*.
+- **Small repos / targeted edits** (~10% `research` dispatch share): estimated total session quota reduction of **~6% on Hydrogen**, **~7% on Argon**, and **~8% on Neon**.
+- **Unfamiliar repos / exploration-heavy workflows** (~50% `research` dispatch share): estimated total session quota reduction of **~31% on Hydrogen**, **~35% on Argon**, and **~38% on Neon** *(plus secondary prompt-cache savings from keeping bulky reads out of the parent context)*.
 
 Common **exploration-heavy workflows** that benefit most from delegating discovery to `research` include:
 - **QA & bug triage**: reproducing symptoms, tracing execution paths, and inspecting logs/stack traces.
@@ -70,12 +70,12 @@ This repository includes refined definitions for both primary subagents:
 ### 1. `agents/research.md` (Read-Only Explorer)
 - **Role**: Codebase exploration, file search, documentation lookup, and web research.
 - **Tools**: Read-only (`enable_write_tools: false`, `enable_mcp_tools: false`).
-- **Hook Policy**: **Forced to `flash_lite` via hook**. Massive quota savings with zero risk of code corruption.
+- **Hook Policy**: **Rewritten to `flash_lite` when `Model` is `inherit`/unset** (explicit overrides like `pro` are respected unless `--force` is passed).
 
 ### 2. `agents/worker.md` (Mechanical Worker)
 - **Role**: Focused edits, lint/format fixes, single-file patches, and narrow test runs.
 - **Tools**: Write enabled (`enable_write_tools: true`).
-- **Hook Policy**: **NOT forced to `flash_lite`**. `gemini-3.5-flash-lite` has higher error rates on exact-match whitespace diffs (`edit_file`) and recovery loops. To avoid file corruption or looping edits, `worker` remains on `flash` / parent model.
+- **Hook Policy**: **NOT routed to `flash_lite`**. `gemini-3.5-flash-lite` has higher error rates on exact-match whitespace diffs (`edit_file`) and recovery loops. To avoid file corruption or looping edits, `worker` remains on `flash` / parent model.
 - **Guardrails**: Added strict pre-edit inspection (`read_file` first to copy whitespace byte-for-byte), scoped edits, and an explicit **fail visibly** policy that forbids speculative workarounds.
 
 ---
@@ -85,12 +85,12 @@ This repository includes refined definitions for both primary subagents:
 ### Option 1: Antigravity Plugin (Recommended)
 Install directly from GitHub via the Antigravity CLI:
 ```bash
-agy plugin install https://github.com/carlosduplar/antigravity-research-flash-lite
+agy plugin install [https://github.com/carlosduplar/antigravity-research-flash-lite](https://github.com/carlosduplar/antigravity-research-flash-lite)
 ```
 
 Or clone locally and install from the directory (via CLI or `/plugin install <directory>` inside `agy`):
 ```bash
-git clone https://github.com/carlosduplar/antigravity-research-flash-lite.git
+git clone [https://github.com/carlosduplar/antigravity-research-flash-lite.git](https://github.com/carlosduplar/antigravity-research-flash-lite.git)
 agy plugin install ./antigravity-research-flash-lite
 ```
 
@@ -106,9 +106,11 @@ Verify installation with `agy plugin list`.
 2. Copy `agents/*.md` to `<project-root>/.agents/agents/`.
 3. Copy `hooks.json` to `<project-root>/.agents/hooks.json`.
 
-The fallback chain in `hooks.json` automatically resolves the script path across all three installation methods:
+### Portable `hooks.json` Resolution
+`hooks.json` resolves the Python interpreter (`python3` preferred, falling back to `python`) and locates `research-flash-lite.py` across plugin, workspace, and global paths before invoking `exec`, ensuring `stdin` is read exactly once and failing open (`{"decision":"allow"}`) if the script is missing:
+
 ```json
-"command": "python scripts/research-flash-lite.py || python3 scripts/research-flash-lite.py || python ../../.agents/scripts/research-flash-lite.py || python3 ../../.agents/scripts/research-flash-lite.py"
+"command": "PY=$(command -v python3 || command -v python); for p in scripts/research-flash-lite.py .agents/scripts/research-flash-lite.py \"$HOME/.agents/scripts/research-flash-lite.py\"; do [ -f \"$p\" ] && exec \"$PY\" \"$p\"; done; echo '{\"decision\":\"allow\"}'"
 ```
 
 > [!IMPORTANT]
@@ -116,7 +118,30 @@ The fallback chain in `hooks.json` automatically resolves the script path across
 
 ---
 
+## Script Options & Verification
+
+`scripts/research-flash-lite.py` supports optional CLI flags if you want to customize its behavior in `hooks.json`:
+
+- `model` *(positional, default `flash_lite`)*: Target model (`flash_lite`, `flash`, `pro`, `inherit`).
+- `--agent <name>` *(default `research`)*: Subagent `TypeName` to match.
+- `--force`: Rewrite even when an explicit non-`inherit` model (e.g., `pro`) was requested.
+
+Run a quick smoke test before restarting `agy`:
+
+```bash
+# Rewrites inherit -> flash_lite
+echo '{"toolCall":{"args":{"TypeName":"research","Model":"inherit"}}}' | python3 scripts/research-flash-lite.py
+
+# Preserves explicit pro override
+echo '{"toolCall":{"args":{"TypeName":"research","Model":"pro"}}}' | python3 scripts/research-flash-lite.py
+
+# Forces rewrite when --force is passed
+echo '{"toolCall":{"args":{"TypeName":"research","Model":"pro"}}}' | python3 scripts/research-flash-lite.py --force
+```
+
+---
+
 ## Requirements
 
-- Python 3.8+ on `PATH` (`python` or `python3`).
+- Python 3.8+ on `PATH` (`python3` or `python`).
 - Google Antigravity CLI (`agy`) or Antigravity IDE.
