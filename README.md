@@ -85,13 +85,13 @@ This repository includes refined definitions for both primary subagents:
 ### Option 1: Antigravity Plugin (Recommended)
 Install directly from GitHub via the Antigravity CLI:
 ```bash
-agy plugin install [https://github.com/carlosduplar/antigravity-research-flash-lite](https://github.com/carlosduplar/antigravity-research-flash-lite)
+agy plugin install https://github.com/carlosduplar/agy-lite-research
 ```
 
 Or clone locally and install from the directory (via CLI or `/plugin install <directory>` inside `agy`):
 ```bash
-git clone [https://github.com/carlosduplar/antigravity-research-flash-lite.git](https://github.com/carlosduplar/antigravity-research-flash-lite.git)
-agy plugin install ./antigravity-research-flash-lite
+git clone https://github.com/carlosduplar/agy-lite-research.git
+agy plugin install ./agy-lite-research
 ```
 
 Verify installation with `agy plugin list`.
