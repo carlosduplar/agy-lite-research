@@ -1,127 +1,110 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 580" width="100%" height="100%" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
       <stop offset="0%" stop-color="#0B1120"/>
       <stop offset="100%" stop-color="#111827"/>
     </linearGradient>
-    <linearGradient id="greenGrad" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#10B981"/>
-      <stop offset="100%" stop-color="#34D399"/>
-    </linearGradient>
-    <linearGradient id="amberGrad" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#F59E0B"/>
-      <stop offset="100%" stop-color="#FBBF24"/>
-    </linearGradient>
-    <linearGradient id="redGrad" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#EF4444"/>
+    <linearGradient id="offGrad" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="#DC2626"/>
       <stop offset="100%" stop-color="#F87171"/>
     </linearGradient>
-    <linearGradient id="purpleGrad" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#8B5CF6"/>
-      <stop offset="100%" stop-color="#A78BFA"/>
-    </linearGradient>
-    <linearGradient id="blueGrad" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#3B82F6"/>
-      <stop offset="100%" stop-color="#60A5FA"/>
+    <linearGradient id="onGrad" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#34D399"/>
     </linearGradient>
   </defs>
 
-  <!-- Background -->
-  <rect width="960" height="580" rx="16" fill="url(#bg)" stroke="#1E293B" stroke-width="2"/>
+  <!-- Canvas -->
+  <rect x="0" y="0" width="960" height="420" rx="16" fill="url(#bg)" stroke="#1E293B" stroke-width="2"/>
 
   <!-- Header -->
-  <text x="36" y="42" fill="#F8FAFC" font-size="20" font-weight="700">Antigravity Research Subagent Savings: Flash-Lite Hook vs Frontier Models</text>
-  <text x="36" y="66" fill="#94A3B8" font-size="13">Gemini AI Pro • Fresh agy -p single-dispatch runs • Savings apply strictly to research subagent calls</text>
+  <text x="32" y="42" fill="#F8FAFC" font-size="20" font-weight="700">Research Subagent Quota Drain: Plugin OFF vs ON</text>
+  <text x="32" y="64" fill="#94A3B8" font-size="12.5">Gemini AI Pro • Fresh isolated agy -p single-dispatch runs (6-doc synthesis) • Lower is better</text>
 
-  <!-- Left Card: Side-by-Side Hydrogen & Neon (Plugin OFF vs ON) -->
-  <rect x="32" y="88" width="555" height="270" rx="12" fill="#1E293B" fill-opacity="0.55" stroke="#334155" stroke-width="1"/>
-  <text x="52" y="116" fill="#E2E8F0" font-size="15" font-weight="700">1. General Pool Drain: Plugin OFF vs ON (Hydrogen &amp; Neon)</text>
-  <text x="52" y="135" fill="#94A3B8" font-size="12">Fresh agy -p 6-doc research dispatch • 5-Hour &amp; Weekly drain (lower is better)</text>
+  <!-- Global Legend -->
+  <rect x="652" y="26" width="12" height="12" rx="3" fill="url(#offGrad)"/>
+  <text x="670" y="36" fill="#E2E8F0" font-size="12" font-weight="600">Plugin OFF (inherit)</text>
+  <rect x="802" y="26" width="12" height="12" rx="3" fill="url(#onGrad)"/>
+  <text x="820" y="36" fill="#E2E8F0" font-size="12" font-weight="600">Plugin ON (flash_lite)</text>
 
-  <!-- Group 1: Hydrogen High -->
-  <text x="52" y="164" fill="#F8FAFC" font-size="13" font-weight="700">Gemini 4 Hydrogen (High)</text>
+  <!-- Panel 1: General Pool (5-Hour Limit) -->
+  <rect x="32" y="86" width="516" height="296" rx="12" fill="#1E293B" fill-opacity="0.55" stroke="#334155" stroke-width="1"/>
+  <text x="52" y="114" fill="#F8FAFC" font-size="15" font-weight="700">1. General Pool — 5-Hour Limit Drain</text>
+  <text x="52" y="132" fill="#94A3B8" font-size="11.5">Same scale (0% to 1.40% 5-Hr drain) • Includes parent dispatch turn</text>
 
-  <text x="64" y="185" fill="#FBBF24" font-size="12" font-weight="600">Plugin OFF (inherit)</text>
-  <rect x="245" y="175" width="54" height="11" rx="3" fill="url(#amberGrad)"/>
-  <text x="307" y="185" fill="#FDE68A" font-size="12" font-weight="700">-0.40% 5-Hr</text>
-  <rect x="245" y="189" width="15" height="8" rx="3" fill="#D97706"/>
-  <text x="268" y="196" fill="#FEF3C7" font-size="11">-0.11% Weekly</text>
+  <!-- Gridlines Panel 1 (x=150 is 0%, 200px per 1.00%) -->
+  <line x1="150" y1="150" x2="150" y2="338" stroke="#475569" stroke-width="1"/>
+  <line x1="250" y1="150" x2="250" y2="338" stroke="#334155" stroke-dasharray="3 3" stroke-width="1"/>
+  <line x1="350" y1="150" x2="350" y2="338" stroke="#334155" stroke-dasharray="3 3" stroke-width="1"/>
+  <line x1="430" y1="150" x2="430" y2="338" stroke="#334155" stroke-dasharray="3 3" stroke-width="1"/>
 
-  <text x="64" y="217" fill="#34D399" font-size="12" font-weight="600">Plugin ON (flash_lite)</text>
-  <rect x="245" y="207" width="20" height="11" rx="3" fill="url(#greenGrad)"/>
-  <text x="273" y="217" fill="#34D399" font-size="12" font-weight="700">-0.15% 5-Hr (2.67x lower)</text>
-  <rect x="245" y="221" width="7" height="8" rx="3" fill="#059669"/>
-  <text x="260" y="228" fill="#A7F3D0" font-size="11">-0.05% Weekly (2.20x lower)</text>
+  <text x="150" y="354" fill="#64748B" font-size="10.5" text-anchor="middle">0.0%</text>
+  <text x="250" y="354" fill="#64748B" font-size="10.5" text-anchor="middle">0.5%</text>
+  <text x="350" y="354" fill="#64748B" font-size="10.5" text-anchor="middle">1.0%</text>
+  <text x="430" y="354" fill="#64748B" font-size="10.5" text-anchor="middle">1.4%</text>
+
+  <!-- Hydrogen High -->
+  <text x="52" y="170" fill="#F8FAFC" font-size="13" font-weight="700">Gemini 4 Hydrogen (High)</text>
+  <text x="328" y="170" fill="#94A3B8" font-size="11">Weekly: -0.11% → -0.05% (2.20x)</text>
+
+  <text x="142" y="196" fill="#FCA5A5" font-size="11.5" font-weight="600" text-anchor="end">OFF</text>
+  <rect x="150" y="184" width="80" height="16" rx="4" fill="url(#offGrad)"/>
+  <text x="238" y="196" fill="#FECACA" font-size="12" font-weight="700">-0.40%</text>
+
+  <text x="142" y="220" fill="#6EE7B7" font-size="11.5" font-weight="600" text-anchor="end">ON</text>
+  <rect x="150" y="208" width="30" height="16" rx="4" fill="url(#onGrad)"/>
+  <text x="188" y="220" fill="#34D399" font-size="12" font-weight="700">-0.15% (2.67x lower)</text>
 
   <!-- Divider -->
-  <line x1="52" y1="241" x2="567" y2="241" stroke="#334155" stroke-width="1" stroke-dasharray="4 4"/>
+  <line x1="52" y1="242" x2="528" y2="242" stroke="#334155" stroke-dasharray="4 4" stroke-width="1"/>
 
-  <!-- Group 2: Neon High -->
-  <text x="52" y="262" fill="#F8FAFC" font-size="13" font-weight="700">Gemini 4 Neon (High)</text>
+  <!-- Neon High -->
+  <text x="52" y="266" fill="#F8FAFC" font-size="13" font-weight="700">Gemini 4 Neon (High)</text>
+  <text x="328" y="266" fill="#94A3B8" font-size="11">Weekly: -0.38% → -0.09% (4.22x)</text>
 
-  <text x="64" y="283" fill="#F87171" font-size="12" font-weight="600">Plugin OFF (inherit)</text>
-  <rect x="245" y="273" width="178" height="11" rx="3" fill="url(#redGrad)"/>
-  <text x="431" y="283" fill="#FCA5A5" font-size="12" font-weight="700">-1.32% 5-Hr</text>
-  <rect x="245" y="287" width="51" height="8" rx="3" fill="#DC2626"/>
-  <text x="304" y="294" fill="#FECACA" font-size="11">-0.38% Weekly</text>
+  <text x="142" y="292" fill="#FCA5A5" font-size="11.5" font-weight="600" text-anchor="end">OFF</text>
+  <rect x="150" y="280" width="264" height="16" rx="4" fill="url(#offGrad)"/>
+  <text x="422" y="292" fill="#FECACA" font-size="12" font-weight="700">-1.32%</text>
 
-  <text x="64" y="315" fill="#34D399" font-size="12" font-weight="600">Plugin ON (flash_lite)</text>
-  <rect x="245" y="305" width="42" height="11" rx="3" fill="url(#greenGrad)"/>
-  <text x="295" y="315" fill="#34D399" font-size="12" font-weight="700">-0.31% 5-Hr (4.26x lower)</text>
-  <rect x="245" y="319" width="12" height="8" rx="3" fill="#059669"/>
-  <text x="265" y="326" fill="#A7F3D0" font-size="11">-0.09% Weekly (4.22x lower)</text>
+  <text x="142" y="316" fill="#6EE7B7" font-size="11.5" font-weight="600" text-anchor="end">ON</text>
+  <rect x="150" y="304" width="62" height="16" rx="4" fill="url(#onGrad)"/>
+  <text x="220" y="316" fill="#34D399" font-size="12" font-weight="700">-0.31% (4.26x lower)</text>
 
-  <text x="52" y="347" fill="#94A3B8" font-size="11">Note: Above ON numbers include the parent frontier dispatch turn; isolated flash_lite subagent drain is &lt;0.01%.</text>
+  <text x="52" y="372" fill="#94A3B8" font-size="10.5">Isolated flash_lite research subagent drain: &lt;0.01% (0.00% measured)</text>
 
-  <!-- Right Card: Argon & Claude Separate Pools -->
-  <rect x="605" y="88" width="323" height="270" rx="12" fill="#1E293B" fill-opacity="0.55" stroke="#334155" stroke-width="1"/>
-  <text x="625" y="116" fill="#E2E8F0" font-size="15" font-weight="700">2. Separate Pools: Argon &amp; Claude</text>
-  <text x="625" y="135" fill="#94A3B8" font-size="12">Dedicated Argon Weekly &amp; Claude limits</text>
+  <!-- Panel 2: Dedicated Pools (Argon & Claude) -->
+  <rect x="568" y="86" width="360" height="296" rx="12" fill="#1E293B" fill-opacity="0.55" stroke="#334155" stroke-width="1"/>
+  <text x="588" y="114" fill="#F8FAFC" font-size="15" font-weight="700">2. Dedicated Pools — Argon &amp; Claude</text>
+  <text x="588" y="132" fill="#94A3B8" font-size="11.5">Separate weekly/session pools (not comparable to Panel 1 scale)</text>
 
-  <text x="625" y="164" fill="#CBD5E1" font-size="12" font-weight="600">Gemini 4 Argon (High) — Argon Weekly:</text>
+  <!-- Argon Weekly -->
+  <text x="588" y="164" fill="#F8FAFC" font-size="13" font-weight="700">Gemini 4 Argon (High) — Argon Weekly</text>
 
-  <text x="625" y="186" fill="#A78BFA" font-size="12" font-weight="700">Plugin OFF (inherit)</text>
-  <rect x="625" y="193" width="175" height="14" rx="3" fill="url(#purpleGrad)"/>
-  <text x="808" y="204" fill="#DDD6FE" font-size="12" font-weight="700">-1.24% Argon</text>
+  <!-- Gridlines Panel 2 (x=632 is 0%, 150px per 1.00%) -->
+  <line x1="632" y1="176" x2="632" y2="238" stroke="#475569" stroke-width="1"/>
+  <line x1="707" y1="176" x2="707" y2="238" stroke="#334155" stroke-dasharray="3 3" stroke-width="1"/>
+  <line x1="782" y1="176" x2="782" y2="238" stroke="#334155" stroke-dasharray="3 3" stroke-width="1"/>
 
-  <text x="625" y="227" fill="#34D399" font-size="12" font-weight="700">Plugin ON (flash_lite subagent)</text>
-  <rect x="625" y="234" width="54" height="14" rx="3" fill="url(#greenGrad)"/>
-  <text x="687" y="245" fill="#34D399" font-size="12" font-weight="700">-0.38% (3.26x lower)</text>
+  <text x="624" y="196" fill="#FCA5A5" font-size="11.5" font-weight="600" text-anchor="end">OFF</text>
+  <rect x="632" y="184" width="186" height="16" rx="4" fill="url(#offGrad)"/>
+  <text x="826" y="196" fill="#FECACA" font-size="12" font-weight="700">-1.24%</text>
 
-  <rect x="625" y="264" width="283" height="78" rx="8" fill="#0F172A" stroke="#065F46" stroke-width="1"/>
-  <text x="637" y="284" fill="#34D399" font-size="12" font-weight="700">Isolated research subagent drain:</text>
-  <text x="637" y="303" fill="#E2E8F0" font-size="11">• Argon ON: 0.00% Argon, 0.00% (&lt;0.01%) General</text>
-  <text x="637" y="321" fill="#E2E8F0" font-size="11">• Opus 5.5 ON: 0.00% Claude, 0.00% (&lt;0.01%) General</text>
-  <text x="637" y="336" fill="#94A3B8" font-size="10">(Opus parent turns: -3.70% Weekly / -7.39% 5-Hr)</text>
+  <text x="624" y="222" fill="#6EE7B7" font-size="11.5" font-weight="600" text-anchor="end">ON</text>
+  <rect x="632" y="210" width="57" height="16" rx="4" fill="url(#onGrad)"/>
+  <text x="697" y="222" fill="#34D399" font-size="12" font-weight="700">-0.38% (3.26x lower)</text>
 
-  <!-- Bottom Card: Estimated Overall Session Gains (research-Only Savings Scaled by Workflow) -->
-  <rect x="32" y="374" width="896" height="180" rx="12" fill="#1E293B" fill-opacity="0.55" stroke="#334155" stroke-width="1"/>
-  <text x="52" y="401" fill="#E2E8F0" font-size="15" font-weight="700">3. Estimated Total Session Gains (Measured Savings Apply to research Subagent ONLY)</text>
-  <text x="52" y="419" fill="#94A3B8" font-size="12">Scaled from FastContext (46.5% exploration token share) by how much discovery is delegated to research</text>
+  <text x="632" y="252" fill="#64748B" font-size="10.5" text-anchor="middle">0.0%</text>
+  <text x="707" y="252" fill="#64748B" font-size="10.5" text-anchor="middle">0.5%</text>
+  <text x="782" y="252" fill="#64748B" font-size="10.5" text-anchor="middle">1.0%</text>
 
-  <!-- Card 1: Small Repos / Targeted Edits -->
-  <rect x="52" y="432" width="274" height="106" rx="8" fill="#0F172A" stroke="#334155"/>
-  <text x="66" y="453" fill="#F8FAFC" font-size="13" font-weight="700">Small Repos / Targeted Edits</text>
-  <text x="66" y="469" fill="#94A3B8" font-size="11">~10% delegated to research</text>
-  <rect x="66" y="479" width="246" height="8" rx="4" fill="#1E293B"/>
-  <rect x="66" y="479" width="52" height="8" rx="4" fill="url(#blueGrad)"/>
-  <text x="66" y="505" fill="#60A5FA" font-size="13" font-weight="700">~22% Hydrogen • ~32% Argon</text>
-  <text x="66" y="523" fill="#93C5FD" font-size="13" font-weight="700">~44% Neon <tspan fill="#94A3B8" font-size="11" font-weight="400">total session gain</tspan></text>
+  <!-- Isolated Subagent Drain Callout -->
+  <rect x="588" y="268" width="320" height="96" rx="8" fill="#0F172A" stroke="#065F46" stroke-width="1"/>
+  <text x="602" y="290" fill="#34D399" font-size="12" font-weight="700">Isolated research subagent drain (Plugin ON)</text>
+  <text x="602" y="311" fill="#E2E8F0" font-size="11.5">• Argon (High): 0.00% Argon • &lt;0.01% General</text>
+  <text x="602" y="331" fill="#E2E8F0" font-size="11.5">• Claude Opus 5.5 (Med): 0.00% Claude • &lt;0.01% General</text>
+  <text x="612" y="349" fill="#94A3B8" font-size="10.5">(Opus parent turns: -3.70% Weekly / -7.39% 5-Hr)</text>
 
-  <!-- Card 2: Unfamiliar Repos / Exploration-Heavy -->
-  <rect x="343" y="432" width="274" height="106" rx="8" fill="#0F172A" stroke="#065F46"/>
-  <text x="357" y="453" fill="#F8FAFC" font-size="13" font-weight="700">Unfamiliar / Exploration-Heavy</text>
-  <text x="357" y="469" fill="#94A3B8" font-size="11">~50% delegated to research</text>
-  <rect x="357" y="479" width="246" height="8" rx="4" fill="#1E293B"/>
-  <rect x="357" y="479" width="142" height="8" rx="4" fill="url(#greenGrad)"/>
-  <text x="357" y="505" fill="#34D399" font-size="13" font-weight="700">Up to ~1.1x Hydrogen • ~1.63x Argon</text>
-  <text x="357" y="523" fill="#A7F3D0" font-size="13" font-weight="700">Up to ~2.1x Neon <tspan fill="#94A3B8" font-size="11" font-weight="400">+ cache savings</tspan></text>
-
-  <!-- Card 3: High-Impact Workflows -->
-  <rect x="634" y="432" width="274" height="106" rx="8" fill="#0F172A" stroke="#334155"/>
-  <text x="648" y="453" fill="#F8FAFC" font-size="13" font-weight="700">High-Impact Workflows</text>
-  <text x="648" y="472" fill="#CBD5E1" font-size="11">• QA, bug triage &amp; log/trace analysis</text>
-  <text x="648" y="489" fill="#CBD5E1" font-size="11">• Code audits &amp; security reviews</text>
-  <text x="648" y="506" fill="#CBD5E1" font-size="11">• PR validation &amp; impact analysis</text>
-  <text x="648" y="523" fill="#CBD5E1" font-size="11">• Onboarding, refactors &amp; doc synthesis</text>
+  <!-- Footer -->
+  <text x="32" y="404" fill="#64748B" font-size="11">Scope: Savings apply strictly to delegated research subagent calls (TypeName="research"). Parent turns and worker edits use your selected model.</text>
 </svg>
