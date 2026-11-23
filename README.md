@@ -1,4 +1,4 @@
-# antigravity-research-flash-lite
+# Antigravity Lite Research
 
 A deterministic `PreToolUse` hook, Python helper script, and agent configuration plugin for Google Antigravity that rewrites `invoke_subagent` calls targeting **only the `research` subagent** from `Model: "inherit"` to `Model: "flash_lite"` (`gemini-3.5-flash-lite`) before execution—while still respecting explicit non-`inherit` overrides (such as `Model: "pro"`).
 
