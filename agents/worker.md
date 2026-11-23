@@ -2,7 +2,7 @@
 name: worker
 description: Low-cost worker for mechanical or repetitive edits, lint/format fixes, single-file patches, log inspection, data conversion and narrow test runs. Not for design decisions.
 kind: local
-model: Gemini 3.8 Flash (High)
+model: flash
 subagent: true
 mainAgent: false
 max_turns: 30

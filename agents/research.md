@@ -2,11 +2,11 @@
 name: research
 description: Read-only research subagent for codebase exploration, file search, documentation lookup and web research. Use for broad, read-heavy surveys that would clutter the parent context.
 kind: local
-model: Gemini 3.8 Flash (High)
+model: flash_lite
 subagent: true
 mainAgent: false
-max_turns: 40
-timeout_mins: 15
+max_turns: 15
+timeout_mins: 5
 enable_write_tools: false
 enable_mcp_tools: false
 ---

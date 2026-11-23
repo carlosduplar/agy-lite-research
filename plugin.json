@@ -1,3 +1,16 @@
 {
-  "name": "antigravity-research-flash-lite"
+  "name": "antigravity-research-flash-lite",
+  "displayName": "Research Flash-Lite Quota Saver",
+  "description": "Deterministic PreToolUse hook and tuned research/worker subagents that route research subagent calls to flash_lite for ~2.5x quota savings.",
+  "version": "1.0.0",
+  "author": {
+    "name": "carlosduplar",
+    "url": "https://github.com/carlosduplar"
+  },
+  "homepage": "https://github.com/carlosduplar/antigravity-research-flash-lite",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/carlosduplar/antigravity-research-flash-lite.git"
+  },
+  "logo": "assets/logo.svg"
 }

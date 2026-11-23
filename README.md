@@ -1,8 +1,13 @@
 # antigravity-research-flash-lite
 
-A deterministic `PreToolUse` hook, Python helper script, and agent configuration suite for Google Antigravity that rewrites `invoke_subagent` calls targeting the `research` subagent to `Model: "flash_lite"` (`gemini-3.5-flash-lite`) before execution.
+A deterministic `PreToolUse` hook, Python helper script, and agent configuration suite for Google Antigravity that rewrites `invoke_subagent` calls targeting **only the `research` subagent** to `Model: "flash_lite"` (`gemini-3.5-flash-lite`) before execution.
 
-Empirically saves **~2.5x to 2.7x** quota compared to running subagents on Gemini 4 Hydrogen (High).
+> [!NOTE]
+> **Scope of savings**: Quota savings apply **strictly to delegated `research` subagent calls** (`TypeName="research"`). Your primary session turns, `worker` edits, `self` subagents, and non-`research` tool calls continue consuming your selected frontier model quota as usual. Actual overall session savings depend on how much read-heavy exploration you delegate to `research`.
+
+On fresh single-dispatch `agy -p` `research` benchmarks (Gemini AI Pro), routing `research` calls to `flash_lite` reduces the `research` subagent's own quota drain to **`< 0.01%` (`0.00%` measured)** — cutting benchmark-run drain by **2.67x** on **Gemini 4 Hydrogen (High)**, **4.26x** on **Gemini 4 Neon (High)**, **3.26x** on **Gemini 4 Argon (High)**, and keeping **Claude Opus 5.5 (Medium)** subagent drain at **0.00%**.
+
+![Research Subagent Quota Drain Comparison](./assets/benchmark-savings.svg)
 
 ---
 
@@ -10,42 +15,51 @@ Empirically saves **~2.5x to 2.7x** quota compared to running subagents on Gemin
 
 Antigravity's `invoke_subagent` tool schema defaults its `Model` parameter to `'inherit'` (`['inherit', 'flash_lite', 'flash', 'pro']`). The system prompt instructs parent agents to default to `'inherit'` unless explicitly requested otherwise.
 
-When you work with a model like `Gemini 4 Hydrogen (High)`, any `invoke_subagent` call passing `Model: "inherit"` **overrides the subagent's frontmatter configuration** (e.g. `model: Gemini 3.8 Flash (High)` in `research.md`). As a result, read-heavy exploratory subagent tasks inadvertently inherit and drain your primary frontier model quota.
+When your main session uses a frontier model such as `Gemini 4 Hydrogen (High)`, `Gemini 4 Neon (High)`, `Gemini 4 Argon (High)`, or `Claude Opus 5.5 (Medium)`, any `invoke_subagent(TypeName="research", Model="inherit")` call **overrides `research.md`'s frontmatter model** (`model: flash_lite`). As a result, read-heavy exploratory `research` calls inadvertently inherit and drain your primary frontier model quota.
 
-Because models frequently overlook prompt instructions not to pass `'inherit'`, this lifecycle hook intercepts `invoke_subagent` deterministically at the engine level, replacing `Model` with `"flash_lite"` before the subagent container is launched.
+Because parent models frequently overlook prompt instructions not to pass `'inherit'`, this lifecycle hook intercepts `invoke_subagent` deterministically at the engine level, replacing `Model` with `"flash_lite"` **only when `TypeName == "research"`**. Other subagents (`worker`, `self`, etc.) are left untouched.
 
 ---
 
-## Empirical Benchmark Results
+## Empirical Benchmark Results (`research` Subagent Only)
 
-A deterministic 3-way A/B/C benchmark was conducted on an identical, heavy 6-document comparative synthesis task across Antigravity's internal customization documentation (`hooks.md`, `json_configs.md`, `mcp_servers.md`, `plugins.md`, `rules.md`, `skills.md` — ~33KB source text).
+A deterministic multi-model A/B benchmark was conducted on a **Gemini AI Pro** subscription using fresh, isolated `agy -p --model <id>` sessions (zero leftover conversation history) on a single heavy 6-document comparative synthesis task delegated to `research` across Antigravity's internal customization documentation (`hooks.md`, `json_configs.md`, `mcp_servers.md`, `plugins.md`, `rules.md`, `skills.md` — ~33KB source text).
 
-Each run invoked `invoke_subagent(TypeName="research", Model="inherit")` after a clean `agy` restart, with live `/usage` quota snapshots measured immediately before and after.
+Each run invoked `invoke_subagent(TypeName="research", Model="inherit")` with live `/usage` quota snapshots measured immediately before and after that single `agy -p` dispatch. *(Percentage drains reflect a **Gemini AI Pro** quota pool and scale with your subscription tier.)*
 
-| Metric | Run A (`flash_lite`) | Run B (`inherit`, hook off) | Run C (`flash`) |
-| :--- | :--- | :--- | :--- |
-| **Hook Overwrite** | `Model: "flash_lite"` | *(disabled)* | `Model: "flash"` |
-| **Observed `PLANNER_RESPONSE.model`** | `gemini-3.5-flash-lite` | `gemini-4-hydrogen-high` | `gemini-4-hydrogen-tiered-high` |
-| **Subagent Turns** | `17` *(attempted file writes)* | `5` *(stopped on read-only)* | `5` *(stopped on read-only)* |
-| **Input Tokens** | `65,346` | `36,730` | `36,414` |
-| **Cache Read Tokens** | `370,039` | `65,718` | `68,698` |
-| **Output Tokens** | `11,839` | `14,969` | `15,641` |
-| **Weekly Limit Remaining** | `97.83%` &rarr; `97.65%` | `97.45%` &rarr; `97.01%` | `96.67%` &rarr; `96.21%` |
-| **Weekly Limit Drain** | **`-0.18%`** | **`-0.44%`** (2.44x Run A) | **`-0.46%`** (2.56x Run A) |
-| **5-Hour Limit Remaining** | `93.38%` &rarr; `92.79%` | `92.07%` &rarr; `90.52%` | `89.34%` &rarr; `87.73%` |
-| **5-Hour Limit Drain** | **`-0.59%`** | **`-1.55%`** (2.63x Run A) | **`-1.61%`** (2.73x Run A) |
+| Metric | Run A (`flash_lite`, Plugin ON) | Run B — Hydrogen High (`inherit`) | Run B — Neon High (`inherit`) | Run B — Argon High (`inherit`) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Observed `PLANNER_RESPONSE.model`** | `gemini-3.5-flash-lite` | `gemini-4-hydrogen-high` | `gemini-4-neon-high` | `gemini-4-argon-high` |
+| **Benchmark-Run Quota Multiplier Savings** | **Baseline (`0.00%` / `< 0.01%` `research` drain)** | **2.20x Weekly / 2.67x 5-Hr lower run drain** (`-0.05% / -0.15%` ON vs `-0.11% / -0.40%` OFF) | **4.22x Weekly / 4.26x 5-Hr lower run drain** (`-0.09% / -0.31%` ON vs `-0.38% / -1.32%` OFF) | **3.26x lower Argon run drain** (`-0.38%` ON vs `-1.24%` OFF; **`0.00%` Argon** subagent drain) |
 
 ### Key Findings & Discussion
 
-1. **`Model: "flash"` does not save quota vs `inherit`**:
-   In current Antigravity deployments, `Model: "flash"` resolves to `gemini-4-hydrogen-tiered-high`. It consumed **2.56x** more Weekly quota and **2.73x** more 5-Hour quota than `flash_lite`, draining virtually the same quota as running on the primary `Gemini 4 Hydrogen (High)` model (`inherit`).
-2. **`flash_lite` delivers real quota preservation**:
-   Even in an extra-heavy 17-turn run with write retries, `gemini-3.5-flash-lite` consumed less than 40% of the quota drained by `inherit` or `flash`. When properly constrained to return data via `send_message`, a clean 4-turn run consumed only **27,013 input / 28,466 cache read / 3,493 output tokens** (`50dfbfc1-e083-429b-8dae-3548b4142a7d`).
-3. **The "Extra Turns" issue and resolution**:
-   In Run A, `gemini-3.5-flash-lite` attempted 12 turns of `run_command` script-writing workarounds because the prompt asked to *"Write a manual without sending it back"* while `research` has `enable_write_tools: false`. By contrast, frontier models recognized the contradiction immediately on turn 1.
-   - **Fix implemented**: Added explicit boundaries to [`agents/research.md`](./agents/research.md):
-     > *"Do not modify or create files. Never attempt to use run_command or scripts to create or write files to disk. Always return all reports, summaries, analyses, and data directly to the caller via send_message."*
-   - **Best practice for prompts**: Delegate tasks to `research` with *"Analyze and return via send_message"* instead of *"Write a file"*.
+1. **Near-zero `research` subagent quota consumption (`< 0.01%`)**:
+   In both **Argon (High)** and **Claude Opus 5.5 (Medium)** Plugin ON runs (where parent turns billed against Argon or Claude pools while `research` ran on `gemini-3.5-flash-lite`), the General Weekly (`89.00%`) and 5-Hour (`93.81%`) counters moved **`0.00%`**. Thus a `flash_lite` `research` subagent call consumes `< 0.01%` of General quota and **`0.00%`** of Argon or Claude/GPT quota.
+2. **Argon & Claude pool preservation (`0.00%` subagent drain)**:
+   When working with `Gemini 4 Argon (High)`, disabling the plugin raised total Argon Weekly drain from **`-0.38%`** (parent-only) to **`-1.24%`** (**3.26x** higher), meaning the unhooked `research` subagent alone consumed **`-0.86%`** of weekly Argon quota. With **Claude Opus 5.5 (Medium)** + Plugin ON, parent turns consumed `-3.70%` Weekly / `-7.39%` 5-Hour Claude quota while `research` ran on `flash_lite` with **`0.00%`** Claude quota drain *(Plugin OFF skipped to preserve remaining Claude quota)*.
+3. **Fresh-session A/B multipliers on `Hydrogen` (`2.67x`) & `Neon` (`4.26x`)**:
+   In isolated `agy -p` single-dispatch runs (one parent turn delegating to `research`), enabling the plugin reduced 5-Hour drain from `-0.40%` to `-0.15%` (**2.67x**, Weekly `-0.11%` → `-0.05%` = **2.20x**) on `Gemini 4 Hydrogen (High)`, and from `-1.32%` to `-0.31%` (**4.26x**, Weekly `-0.38%` → `-0.09%` = **4.22x**) on `Gemini 4 Neon (High)`. These multipliers reflect a `research`-heavy single dispatch; sessions with fewer `research` calls or heavy parent/worker coding will see proportionally smaller overall savings.
+4. **Hardened `agents/research.md` configuration**:
+   The plugin also includes a hardened `agents/research.md` definition with explicit read-only instructions (`enable_write_tools: false`, return strictly via `send_message`). As observed during benchmarking, this prevents `research` from attempting tool workarounds on ambiguous tasks. Meanwhile, `agents/worker.md` intentionally remains unhooked on `flash` / parent model.
+
+### Estimated Overall Session Impact
+
+> [!IMPORTANT]
+> The measured benchmark multipliers above apply **to `research` subagent dispatches ONLY**—primary parent turns, `worker`, and `self` subagents still bill against your selected model quota.
+
+Because Google does not publish an Antigravity-wide breakdown of `research` vs. main-agent quota usage, total session impact depends on how much of your workflow is delegated to `research` rather than handled directly by the parent agent. Grounded in Microsoft's [*FastContext* paper](https://arxiv.org/abs/2606.14066) (**46.5%** of main-agent tokens and **56.2%** of tool turns spent reading/searching code), scaling the measured per-model `research` multipliers gives:
+
+- **Small repos / targeted edits** (~10% `research` share): estimated total gains of **~22% on Hydrogen**, **~32% on Argon**, and **~44% on Neon**.
+- **Unfamiliar repos / exploration-heavy workflows** (~50% `research` share): estimated total gains up to **~1.1x on Hydrogen**, **~1.63x on Argon**, and **~2.1x on Neon** *(plus secondary prompt-cache savings from keeping bulky reads out of the parent context)*.
+
+Common **exploration-heavy workflows** that benefit most from delegating discovery to `research` include:
+- **QA & bug triage**: reproducing symptoms, tracing execution paths, and inspecting logs/stack traces.
+- **Code audits & security reviews**: scanning auth boundaries, data flows, and configuration surfaces across modules.
+- **PR validation & impact analysis**: checking cross-file callers, breaking changes, and test coverage before merging.
+- **Unfamiliar codebase onboarding**: mapping repository architecture, entry points, and conventions.
+- **Large-scale refactoring discovery**: locating all symbol usages and edge cases before running edits.
+- **Dependency, API & documentation synthesis**: comparing internal specs, schemas, or third-party SDK usage across files.
 
 ---
 
@@ -68,20 +82,29 @@ This repository includes refined definitions for both primary subagents:
 
 ## Installation & Setup
 
-### Option 1: Global Hook & Agent Configurations (Recommended)
+### Option 1: Antigravity Plugin (Recommended)
+Install directly from GitHub via the Antigravity CLI:
+```bash
+agy plugin install https://github.com/carlosduplar/antigravity-research-flash-lite
+```
+
+Or clone locally and install from the directory (via CLI or `/plugin install <directory>` inside `agy`):
+```bash
+git clone https://github.com/carlosduplar/antigravity-research-flash-lite.git
+agy plugin install ./antigravity-research-flash-lite
+```
+
+Verify installation with `agy plugin list`.
+
+### Option 2: Global Hook & Agent Configurations
 1. Copy `scripts/research-flash-lite.py` to `~/.agents/scripts/research-flash-lite.py`.
 2. Copy `agents/research.md` and `agents/worker.md` to `~/.gemini/config/agents/`.
 3. Merge `hooks.json` into `~/.gemini/config/hooks.json`.
 
-### Option 2: Project Workspace Hook
+### Option 3: Project Workspace Hook
 1. Copy `scripts/research-flash-lite.py` to `<project-root>/.agents/scripts/research-flash-lite.py`.
 2. Copy `agents/*.md` to `<project-root>/.agents/agents/`.
 3. Copy `hooks.json` to `<project-root>/.agents/hooks.json`.
-
-### Option 3: Antigravity Plugin
-Clone or copy this repository into your plugins directory:
-- Globally: `~/.gemini/config/plugins/antigravity-research-flash-lite/`
-- Workspace: `<project-root>/.agents/plugins/antigravity-research-flash-lite/`
 
 The fallback chain in `hooks.json` automatically resolves the script path across all three installation methods:
 ```json
