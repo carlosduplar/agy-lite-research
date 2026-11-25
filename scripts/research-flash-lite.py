@@ -115,6 +115,12 @@ def _batched_overwrite(
         return None
 
     raw = tool_args[key]
+    if raw is None:
+        # Unused field on an otherwise flat call: fall through to the flat
+        # check so a co-present TypeName/Model pair is still rewritten.
+        return None
+    if isinstance(raw, str) and not raw.strip():
+        return None
     was_string = isinstance(raw, str)
     entries: Any = raw
     if was_string:
@@ -124,6 +130,10 @@ def _batched_overwrite(
             return {"decision": "allow"}
     if not isinstance(entries, list):
         return {"decision": "allow"}
+    if not entries:
+        # Empty batch on an otherwise flat call: fall through to the flat
+        # check so a co-present TypeName/Model pair is still rewritten.
+        return None
 
     rewritten, changed = _rewrite_entries(entries, target_model, target_agent, force)
     if not changed:

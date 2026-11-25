@@ -5,7 +5,7 @@ A deterministic `PreToolUse` hook, Python helper script, and agent configuration
 > [!NOTE]
 > **Scope of savings**: Quota savings apply **strictly to delegated `research` subagent calls** (`TypeName="research"`). Your primary session turns, `worker` edits, `self` subagents, and non-`research` tool calls continue consuming your selected frontier model quota as usual. Actual overall session savings depend on how much read-heavy exploration you delegate to `research`.
 
-On fresh single-dispatch `agy -p` `research` benchmarks (Gemini AI Pro), routing `research` calls to `flash_lite` keeps the combined single-dispatch drain at **`0.00%` measured** (below `/usage` display resolution, bounding the `research` share at `< 0.01%`) — cutting benchmark-run drain by **2.67x** on **Gemini 4 Hydrogen (High)**, **4.26x** on **Gemini 4 Neon (High)**, and keeping **Claude Opus 5.5 (Medium)** subagent-attributable drain at **0.00%**.
+On fresh single-dispatch `agy -p` `research` benchmarks (Gemini AI Pro), routing `research` calls to `flash_lite` bounds the `research` share at `< 0.01%` (`0.00%` measured on the General counters in the Claude-parent Plugin ON run, below `/usage` display resolution) — cutting benchmark-run drain by **2.67x** on **Gemini 4 Hydrogen (High)**, **4.26x** on **Gemini 4 Neon (High)**, and keeping **Claude Opus 5.5 (Medium)** subagent-attributable drain at **0.00%**.
 
 ![Research Subagent Quota Drain Comparison](./assets/benchmark-savings.svg)
 
@@ -28,7 +28,7 @@ A deterministic multi-model A/B benchmark was conducted on a **Gemini AI Pro** s
 Each run invoked `invoke_subagent(TypeName="research", Model="inherit")` with live `/usage` quota snapshots measured immediately before and after that single `agy -p` dispatch. *(Percentage drains reflect a **Gemini AI Pro** quota pool and scale with your subscription tier.)*
 
 | Metric | Run A (`flash_lite`, Plugin ON) | Run B — Hydrogen High (`inherit`) | Run B — Neon High (`inherit`) |
-| :--- | :--- | :--- | :--- | :--- |
+| :--- | :--- | :--- | :--- |
 | **Observed `PLANNER_RESPONSE.model`** | `gemini-3.5-flash-lite` | `gemini-4-hydrogen-high` | `gemini-4-neon-high` |
 | **Benchmark-Run Quota Multiplier Savings** | **Baseline (`0.00%` / `< 0.01%` `research` drain)** | **2.20x Weekly / 2.67x 5-Hr lower run drain** (`-0.05% / -0.15%` ON vs `-0.11% / -0.40%` OFF) | **4.22x Weekly / 4.26x 5-Hr lower run drain** (`-0.09% / -0.31%` ON vs `-0.38% / -1.32%` OFF) |
 
@@ -41,7 +41,7 @@ Each run invoked `invoke_subagent(TypeName="research", Model="inherit")` with li
 3. **Fresh-session A/B multipliers on `Hydrogen` (`2.67x`) & `Neon` (`4.26x`)**:
    In isolated `agy -p` single-dispatch runs (one parent turn delegating to `research`), enabling the plugin reduced 5-Hour drain from `-0.40%` to `-0.15%` (**2.67x**, Weekly `-0.11%` → `-0.05%` = **2.20x**) on `Gemini 4 Hydrogen (High)`, and from `-1.32%` to `-0.31%` (**4.26x**, Weekly `-0.38%` → `-0.09%` = **4.22x**) on `Gemini 4 Neon (High)`. These multipliers reflect a `research`-heavy single dispatch; sessions with fewer `research` calls or heavy parent/worker coding will see proportionally smaller overall savings.
 4. **Hardened `agents/research.md` configuration**:
-   The plugin includes a hardened `agents/research.md` definition with an explicit read-only `tools` allowlist (`send_message`, `view_file`, `read_url_content`, `search_web`), `inheritMcp: false`, prompt-level read-only instructions (return strictly via `send_message`), and tighter turn/timeout ceilings to prevent runaway retry loops. (`enable_write_tools` / `enable_mcp_tools` are not enforced by current loaders, so they were removed in favor of the allowlist.) Meanwhile, `agents/worker.md` intentionally remains unhooked on `flash` / parent model.
+   The plugin includes a hardened `agents/research.md` definition with an explicit read-only `tools` allowlist (`send_message`, `read_file`, `view_file`, `list_dir`, `find_by_name`, `grep_search`, `read_url_content`, `search_web`), `inheritMcp: false`, prompt-level read-only instructions (return strictly via `send_message`), and tighter turn/timeout ceilings to prevent runaway retry loops. (`enable_write_tools` / `enable_mcp_tools` are not enforced by current loaders, so they were removed in favor of the allowlist.) Meanwhile, `agents/worker.md` intentionally remains unhooked on `flash` / parent model.
 
 ### Estimated Overall Session Impact
 
@@ -69,7 +69,7 @@ This repository includes refined definitions for both primary subagents:
 
 ### 1. `agents/research.md` (Read-Only Explorer)
 - **Role**: Codebase exploration, file search, documentation lookup, and web research.
-- **Tools**: Read-only allowlist (`send_message`, `view_file`, `read_url_content`, `search_web`) with `inheritMcp: false`. (The `enable_write_tools` / `enable_mcp_tools` flags are not enforced by current loaders — the allowlist is the actual guard. Verify via the resolved inventory.)
+- **Tools**: Read-only allowlist (`send_message`, `read_file`, `view_file`, `list_dir`, `find_by_name`, `grep_search`, `read_url_content`, `search_web`) with `inheritMcp: false`. (The `enable_write_tools` / `enable_mcp_tools` flags are not enforced by current loaders — the allowlist is the actual guard. Verify via the resolved inventory.)
 - **Hook Policy**: **Rewritten to `flash_lite` when `Model` is `inherit`/unset** (explicit overrides like `pro` are respected unless `--force` is passed).
 
 ### 2. `agents/worker.md` (Mechanical Worker)
@@ -114,7 +114,7 @@ Verify installation with `agy plugin list`.
 ```
 
 > [!NOTE]
-> `~` expands only under POSIX shells. On native Windows global installs, the `~/.agents/...` links fail through harmlessly; for the hook to rewrite (rather than fail open) there, replace the `~/.agents/...` link with your absolute script path, e.g. `python C:/Users/<you>/.agents/scripts/research-flash-lite.py`.
+> `~` expands only under POSIX shells. On native Windows global installs, the `~/.agents/...` links fail through harmlessly; for the hook to rewrite (rather than fail open) there, replace the `~/.agents/...` link with your absolute script path in quotes (profile directories often contain spaces), e.g. `python "C:/Users/<you>/.agents/scripts/research-flash-lite.py"`. Inside the JSON `command` string, those quotes must be escaped as `\"`.
 
 > [!IMPORTANT]
 > **Restart `agy` after installation**: Antigravity loads and caches `hooks.json` at session startup. Any changes to `hooks.json` require restarting the `agy` server process to take effect.
@@ -176,7 +176,7 @@ agy -p "Invoke the research subagent to thoroughly explore all documentation, co
    ```text
    /usage
    ```
-   Compare the difference: despite reading multiple complete files, the combined parent-plus-`research` dispatch moved `0.00%` — below `/usage` display resolution — which bounds the `research` share at `< 0.01%` of general quota and `0.00%` of Claude quota, preserving your frontier model pool. Note this does not isolate the subagent's exact consumption, since `/usage` deltas always include the parent turn; the per-model attribution in "Empirical Benchmark Results" above subtracts parent-only baselines.
+   Compare the difference: despite reading multiple complete files, the combined parent-plus-`research` dispatch moved `0.00%` on the General counters — below `/usage` display resolution — which bounds the `research` share at `< 0.01%` of General quota. On the Claude pool, the same Plugin ON run showed `-3.70%` Weekly / `-7.39%` 5-Hour of combined movement (parent turns) with `0.00%` attributable to the `research` subagent. Note neither figure isolates the subagent's exact consumption, since `/usage` deltas always include the parent turn; the per-model attribution in "Empirical Benchmark Results" above subtracts parent-only baselines.
 
 ---
 
