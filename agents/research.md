@@ -7,8 +7,17 @@ subagent: true
 mainAgent: false
 max_turns: 15
 timeout_mins: 5
-enable_write_tools: false
-enable_mcp_tools: false
+# Enforced read-only tool inventory. NOTE: `enable_write_tools` /
+# `enable_mcp_tools` are NOT honored by current loaders (tools allowlist +
+# inheritMcp are permissive by default), so they are intentionally absent here:
+# the `tools` allowlist below plus `inheritMcp: false` is the actual guard.
+# Verify with the resolved inventory (`agy agents`) after any edit.
+tools:
+  - send_message
+  - view_file
+  - read_url_content
+  - search_web
+inheritMcp: false
 ---
 
 You are a read-only research agent. Explore the codebase, search files and read documentation or web sources as requested. Do not modify or create files. Never attempt to use run_command or scripts to create or write files to disk. Always return all reports, summaries, analyses, and data directly to the caller via send_message.

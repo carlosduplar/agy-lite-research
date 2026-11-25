@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "PY=$(command -v python3 || command -v python); for p in scripts/research-flash-lite.py .agents/scripts/research-flash-lite.py \"$HOME/.agents/scripts/research-flash-lite.py\"; do [ -f \"$p\" ] && exec \"$PY\" \"$p\"; done; echo '{\"decision\":\"allow\"}'",
+            "command": "python scripts/research-flash-lite.py || python .agents/scripts/research-flash-lite.py || python ~/.agents/scripts/research-flash-lite.py || python3 scripts/research-flash-lite.py || python3 .agents/scripts/research-flash-lite.py || python3 ~/.agents/scripts/research-flash-lite.py || py -3 scripts/research-flash-lite.py || py -3 .agents/scripts/research-flash-lite.py || python -c \"import json;print(json.dumps({'decision':'allow'}))\" || python3 -c \"import json;print(json.dumps({'decision':'allow'}))\"",
             "timeout": 5
           }
         ]
