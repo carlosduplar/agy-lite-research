@@ -5,7 +5,7 @@ A deterministic `PreToolUse` hook, Python helper script, and agent configuration
 > [!NOTE]
 > **Scope of savings**: Quota savings apply **strictly to delegated `research` subagent calls** (`TypeName="research"`). Your primary session turns, `worker` edits, `self` subagents, and non-`research` tool calls continue consuming your selected frontier model quota as usual. Actual overall session savings depend on how much read-heavy exploration you delegate to `research`.
 
-On fresh single-dispatch `agy -p` `research` benchmarks (Gemini AI Pro), routing `research` calls to `flash_lite` reduces the `research` subagent's own quota drain to **`< 0.01%` (`0.00%` measured)** — cutting benchmark-run drain by **2.67x** on **Gemini 4 Hydrogen (High)**, **4.26x** on **Gemini 4 Neon (High)**, **3.26x** on **Gemini 4 Argon (High)**, and keeping **Claude Opus 5.5 (Medium)** subagent drain at **0.00%**.
+On fresh single-dispatch `agy -p` `research` benchmarks (Gemini AI Pro), routing `research` calls to `flash_lite` bounds the `research` share at `< 0.01%` (`0.00%` measured on the General counters in the Claude-parent Plugin ON run, below `/usage` display resolution) — cutting benchmark-run drain by **2.67x** on **Gemini 4 Hydrogen (High)**, **4.26x** on **Gemini 4 Neon (High)**, and keeping **Claude Opus 5.5 (Medium)** subagent-attributable drain at **0.00%**.
 
 ![Research Subagent Quota Drain Comparison](./assets/benchmark-savings.svg)
 
@@ -15,7 +15,7 @@ On fresh single-dispatch `agy -p` `research` benchmarks (Gemini AI Pro), routing
 
 Antigravity's `invoke_subagent` tool schema defaults its `Model` parameter to `'inherit'` (`['inherit', 'flash_lite', 'flash', 'pro']`). The system prompt instructs parent agents to default to `'inherit'` unless explicitly requested otherwise.
 
-When your main session uses a frontier model such as `Gemini 4 Hydrogen (High)`, `Gemini 4 Neon (High)`, `Gemini 4 Argon (High)`, or `Claude Opus 5.5 (Medium)`, any `invoke_subagent(TypeName="research", Model="inherit")` call **overrides `research.md`'s frontmatter model** (`model: flash_lite`). As a result, read-heavy exploratory `research` calls inadvertently inherit and drain your primary frontier model quota.
+When your main session uses a frontier model such as `Gemini 4 Hydrogen (High)`, `Gemini 4 Neon (High)`, or `Claude Opus 5.5 (Medium)`, any `invoke_subagent(TypeName="research", Model="inherit")` call **overrides `research.md`'s frontmatter model** (`model: flash_lite`). As a result, read-heavy exploratory `research` calls inadvertently inherit and drain your primary frontier model quota.
 
 Because parent models frequently overlook prompt instructions not to pass `'inherit'`, this lifecycle hook intercepts `invoke_subagent` deterministically at the engine level, replacing `Model` with `"flash_lite"` **only when `TypeName == "research"` and `Model` is unset or `"inherit"`**. Explicit overrides (e.g., `Model: "pro"`) and other subagents (`worker`, `self`, etc.) are left untouched unless `--force` is enabled.
 
@@ -27,21 +27,21 @@ A deterministic multi-model A/B benchmark was conducted on a **Gemini AI Pro** s
 
 Each run invoked `invoke_subagent(TypeName="research", Model="inherit")` with live `/usage` quota snapshots measured immediately before and after that single `agy -p` dispatch. *(Percentage drains reflect a **Gemini AI Pro** quota pool and scale with your subscription tier.)*
 
-| Metric | Run A (`flash_lite`, Plugin ON) | Run B — Hydrogen High (`inherit`) | Run B — Neon High (`inherit`) | Run B — Argon High (`inherit`) |
-| :--- | :--- | :--- | :--- | :--- |
-| **Observed `PLANNER_RESPONSE.model`** | `gemini-3.5-flash-lite` | `gemini-4-hydrogen-high` | `gemini-4-neon-high` | `gemini-4-argon-high` |
-| **Benchmark-Run Quota Multiplier Savings** | **Baseline (`0.00%` / `< 0.01%` `research` drain)** | **2.20x Weekly / 2.67x 5-Hr lower run drain** (`-0.05% / -0.15%` ON vs `-0.11% / -0.40%` OFF) | **4.22x Weekly / 4.26x 5-Hr lower run drain** (`-0.09% / -0.31%` ON vs `-0.38% / -1.32%` OFF) | **3.26x lower Argon run drain** (`-0.38%` ON vs `-1.24%` OFF; **`0.00%` Argon** subagent drain) |
+| Metric | Run A (`flash_lite`, Plugin ON) | Run B — Hydrogen High (`inherit`) | Run B — Neon High (`inherit`) |
+| :--- | :--- | :--- | :--- |
+| **Observed `PLANNER_RESPONSE.model`** | `gemini-3.5-flash-lite` | `gemini-4-hydrogen-high` | `gemini-4-neon-high` |
+| **Benchmark-Run Quota Multiplier Savings** | **Baseline (`0.00%` / `< 0.01%` `research` drain)** | **2.20x Weekly / 2.67x 5-Hr lower run drain** (`-0.05% / -0.15%` ON vs `-0.11% / -0.40%` OFF) | **4.22x Weekly / 4.26x 5-Hr lower run drain** (`-0.09% / -0.31%` ON vs `-0.38% / -1.32%` OFF) |
 
 ### Key Findings & Discussion
 
 1. **Near-zero `research` subagent quota consumption (`< 0.01%`)**:
-   In both **Argon (High)** and **Claude Opus 5.5 (Medium)** Plugin ON runs (where parent turns billed against Argon or Claude pools while `research` ran on `gemini-3.5-flash-lite`), the General Weekly (`89.00%`) and 5-Hour (`93.81%`) counters moved **`0.00%`**. Thus a `flash_lite` `research` subagent call consumes `< 0.01%` of General quota and **`0.00%`** of Argon or Claude/GPT quota.
-2. **Argon & Claude pool preservation (`0.00%` subagent drain)**:
-   When working with `Gemini 4 Argon (High)`, disabling the plugin raised total Argon Weekly drain from **`-0.38%`** (parent-only) to **`-1.24%`** (**3.26x** higher), meaning the unhooked `research` subagent alone consumed **`-0.86%`** of weekly Argon quota. With **Claude Opus 5.5 (Medium)** + Plugin ON, parent turns consumed `-3.70%` Weekly / `-7.39%` 5-Hour Claude quota while `research` ran on `flash_lite` with **`0.00%`** Claude quota drain *(Plugin OFF skipped to preserve remaining Claude quota)*.
+   In the **Claude Opus 5.5 (Medium)** Plugin ON run (where parent turns billed against the Claude pool while `research` ran on `gemini-3.5-flash-lite`), the General Weekly (`89.00%`) and 5-Hour (`93.81%`) counters moved **`0.00%`** for the combined parent-plus-`research` dispatch. Because `/usage` deltas always include the parent turn, this bounds — rather than isolates — the `research` share at `< 0.01%` of General quota and **`0.00%`** of Claude/GPT quota.
+2. **Claude pool preservation (`0.00%` subagent drain)**:
+   With **Claude Opus 5.5 (Medium)** + Plugin ON, parent turns consumed `-3.70%` Weekly / `-7.39%` 5-Hour Claude quota while `research` ran on `flash_lite` with **`0.00%`** further Claude movement attributable to the subagent *(Plugin OFF skipped to preserve remaining Claude quota)*.
 3. **Fresh-session A/B multipliers on `Hydrogen` (`2.67x`) & `Neon` (`4.26x`)**:
    In isolated `agy -p` single-dispatch runs (one parent turn delegating to `research`), enabling the plugin reduced 5-Hour drain from `-0.40%` to `-0.15%` (**2.67x**, Weekly `-0.11%` → `-0.05%` = **2.20x**) on `Gemini 4 Hydrogen (High)`, and from `-1.32%` to `-0.31%` (**4.26x**, Weekly `-0.38%` → `-0.09%` = **4.22x**) on `Gemini 4 Neon (High)`. These multipliers reflect a `research`-heavy single dispatch; sessions with fewer `research` calls or heavy parent/worker coding will see proportionally smaller overall savings.
 4. **Hardened `agents/research.md` configuration**:
-   The plugin includes a hardened `agents/research.md` definition with explicit read-only instructions (`enable_write_tools: false`, return strictly via `send_message`) and tighter turn/timeout ceilings to prevent runaway retry loops. Meanwhile, `agents/worker.md` intentionally remains unhooked on `flash` / parent model.
+   The plugin includes a hardened `agents/research.md` definition with an explicit read-only `tools` allowlist (`send_message`, `read_file`, `view_file`, `list_dir`, `find_by_name`, `grep_search`, `read_url_content`, `search_web`), `inheritMcp: false`, prompt-level read-only instructions (return strictly via `send_message`), and tighter turn/timeout ceilings to prevent runaway retry loops. (`enable_write_tools` / `enable_mcp_tools` are not enforced by current loaders, so they were removed in favor of the allowlist.) Meanwhile, `agents/worker.md` intentionally remains unhooked on `flash` / parent model.
 
 ### Estimated Overall Session Impact
 
@@ -50,8 +50,8 @@ Each run invoked `invoke_subagent(TypeName="research", Model="inherit")` with li
 
 Because Google does not publish an Antigravity-wide breakdown of `research` vs. main-agent quota usage, total session impact depends on how much of your workflow is delegated to `research` rather than handled directly by the parent agent. Scaling the measured per-model `research` multipliers gives:
 
-- **Small repos / targeted edits** (~10% `research` dispatch share): estimated total session quota reduction of **~6% on Hydrogen**, **~7% on Argon**, and **~8% on Neon**.
-- **Unfamiliar repos / exploration-heavy workflows** (~50% `research` dispatch share): estimated total session quota reduction of **~31% on Hydrogen**, **~35% on Argon**, and **~38% on Neon** *(plus secondary prompt-cache savings from keeping bulky reads out of the parent context)*.
+- **Small repos / targeted edits** (~10% `research` dispatch share): estimated total session quota reduction of **~6% on Hydrogen** and **~8% on Neon**.
+- **Unfamiliar repos / exploration-heavy workflows** (~50% `research` dispatch share): estimated total session quota reduction of **~31% on Hydrogen** and **~38% on Neon** *(plus secondary prompt-cache savings from keeping bulky reads out of the parent context)*.
 
 Common **exploration-heavy workflows** that benefit most from delegating discovery to `research` include:
 - **QA & bug triage**: reproducing symptoms, tracing execution paths, and inspecting logs/stack traces.
@@ -69,7 +69,7 @@ This repository includes refined definitions for both primary subagents:
 
 ### 1. `agents/research.md` (Read-Only Explorer)
 - **Role**: Codebase exploration, file search, documentation lookup, and web research.
-- **Tools**: Read-only (`enable_write_tools: false`, `enable_mcp_tools: false`).
+- **Tools**: Read-only allowlist (`send_message`, `read_file`, `view_file`, `list_dir`, `find_by_name`, `grep_search`, `read_url_content`, `search_web`) with `inheritMcp: false`. (The `enable_write_tools` / `enable_mcp_tools` flags are not enforced by current loaders — the allowlist is the actual guard. Verify via the resolved inventory.)
 - **Hook Policy**: **Rewritten to `flash_lite` when `Model` is `inherit`/unset** (explicit overrides like `pro` are respected unless `--force` is passed).
 
 ### 2. `agents/worker.md` (Mechanical Worker)
@@ -107,11 +107,14 @@ Verify installation with `agy plugin list`.
 3. Copy `hooks.json` to `<project-root>/.agents/hooks.json`.
 
 ### Portable `hooks.json` Resolution
-`hooks.json` resolves the Python interpreter (`python3` preferred, falling back to `python`) and locates `research-flash-lite.py` across plugin, workspace, and global paths before invoking `exec`, ensuring `stdin` is read exactly once and failing open (`{"decision":"allow"}`) if the script is missing:
+`hooks.json` chains the `python`, `python3`, and `py -3` launchers across the plugin (`scripts/`), workspace (`.agents/scripts/`), and global (`~/.agents/scripts/`) script locations with `||`, so the first interpreter-and-script pair found consumes `stdin` exactly once (a missing script exits without reading `stdin`, leaving it intact for the next link) and a final `python -c` fallback emits `{"decision":"allow"}` (fail open) when no script is found. Every link uses plain `||` chaining — no `$(...)`, `for` loops, `exec`, or `$HOME` — so the identical command runs under both POSIX `sh` and native Windows `cmd.exe`:
 
 ```json
-"command": "PY=$(command -v python3 || command -v python); for p in scripts/research-flash-lite.py .agents/scripts/research-flash-lite.py \"$HOME/.agents/scripts/research-flash-lite.py\"; do [ -f \"$p\" ] && exec \"$PY\" \"$p\"; done; echo '{\"decision\":\"allow\"}'"
+"command": "python scripts/research-flash-lite.py || python .agents/scripts/research-flash-lite.py || python ~/.agents/scripts/research-flash-lite.py || python3 scripts/research-flash-lite.py || python3 .agents/scripts/research-flash-lite.py || python3 ~/.agents/scripts/research-flash-lite.py || py -3 scripts/research-flash-lite.py || py -3 .agents/scripts/research-flash-lite.py || python -c \"import json;print(json.dumps({'decision':'allow'}))\" || python3 -c \"import json;print(json.dumps({'decision':'allow'}))\""
 ```
+
+> [!NOTE]
+> `~` expands only under POSIX shells. On native Windows global installs, the `~/.agents/...` links fail through harmlessly; for the hook to rewrite (rather than fail open) there, replace the `~/.agents/...` link with your absolute script path in quotes (profile directories often contain spaces), e.g. `python "C:/Users/<you>/.agents/scripts/research-flash-lite.py"`. Inside the JSON `command` string, those quotes must be escaped as `\"`.
 
 > [!IMPORTANT]
 > **Restart `agy` after installation**: Antigravity loads and caches `hooks.json` at session startup. Any changes to `hooks.json` require restarting the `agy` server process to take effect.
@@ -131,6 +134,9 @@ Run a quick smoke test before restarting `agy`:
 ```bash
 # Rewrites inherit -> flash_lite
 echo '{"toolCall":{"args":{"TypeName":"research","Model":"inherit"}}}' | python3 scripts/research-flash-lite.py
+
+# Rewrites inherit inside a batched Subagents dispatch (JSON-string list)
+echo '{"toolCall":{"args":{"Subagents":"[{\"TypeName\":\"research\",\"Prompt\":\"survey\"}]"}}}' | python3 scripts/research-flash-lite.py
 
 # Preserves explicit pro override
 echo '{"toolCall":{"args":{"TypeName":"research","Model":"pro"}}}' | python3 scripts/research-flash-lite.py
@@ -170,7 +176,7 @@ agy -p "Invoke the research subagent to thoroughly explore all documentation, co
    ```text
    /usage
    ```
-   Compare the difference: despite reading multiple complete files, the `research` subagent consumed `< 0.01%` of general quota and `0.00%` of Argon/Claude quota, preserving your frontier model pool.
+   Compare the difference: despite reading multiple complete files, the combined parent-plus-`research` dispatch moved `0.00%` on the General counters — below `/usage` display resolution — which bounds the `research` share at `< 0.01%` of General quota. On the Claude pool, the same Plugin ON run showed `-3.70%` Weekly / `-7.39%` 5-Hour of combined movement (parent turns) with `0.00%` attributable to the `research` subagent. Note neither figure isolates the subagent's exact consumption, since `/usage` deltas always include the parent turn; the per-model attribution in "Empirical Benchmark Results" above subtracts parent-only baselines.
 
 ---
 

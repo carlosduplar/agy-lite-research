@@ -4,6 +4,10 @@
 Rewrites invoke_subagent calls targeting the research subagent to use
 `flash_lite` (or another configured model) instead of inheriting the
 parent frontier model.
+
+Handles both the flat shape (`args.TypeName` / `args.Model`) and the
+batched shape (`args.Subagents`, a list or JSON-encoded list of per-agent
+specs each carrying its own `TypeName` / `Model`).
 """
 
 from __future__ import annotations
@@ -49,6 +53,97 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     return args
 
 
+def _model_of(entry: dict[str, Any]) -> Any:
+    """Return the model value of a subagent entry (capitalized or not)."""
+    if "Model" in entry:
+        return entry["Model"]
+    return entry.get("model")
+
+
+def _typename_of(entry: dict[str, Any]) -> Any:
+    """Return the type name of a subagent entry (capitalized or not)."""
+    if "TypeName" in entry:
+        return entry["TypeName"]
+    return entry.get("typename")
+
+
+def _rewrite_entries(
+    entries: list[Any],
+    target_model: str,
+    target_agent: str,
+    force: bool,
+) -> tuple[list[Any], bool]:
+    """Rewrite matching entries in place-copy; return (entries, changed)."""
+    changed = False
+    rewritten: list[Any] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            rewritten.append(entry)
+            continue
+        model = _model_of(entry)
+        needs_rewrite = model != target_model and (
+            force or model in INHERIT_VALUES
+        )
+        if _typename_of(entry) == target_agent and needs_rewrite:
+            entry = dict(entry)
+            if "Model" in entry or "model" not in entry:
+                entry["Model"] = target_model
+            else:
+                entry["model"] = target_model
+            changed = True
+        rewritten.append(entry)
+    return rewritten, changed
+
+
+def _batched_overwrite(
+    tool_args: dict[str, Any],
+    target_model: str,
+    target_agent: str,
+    force: bool,
+) -> dict[str, Any] | None:
+    """Handle a batched `Subagents: [...]` dispatch.
+
+    Returns the hook response when the args carry a batched payload
+    (rewritten or not), or None when no batched shape is present.
+    """
+    key = (
+        "Subagents"
+        if "Subagents" in tool_args
+        else ("subagents" if "subagents" in tool_args else None)
+    )
+    if key is None:
+        return None
+
+    raw = tool_args[key]
+    if raw is None:
+        # Unused field on an otherwise flat call: fall through to the flat
+        # check so a co-present TypeName/Model pair is still rewritten.
+        return None
+    if isinstance(raw, str) and not raw.strip():
+        return None
+    was_string = isinstance(raw, str)
+    entries: Any = raw
+    if was_string:
+        try:
+            entries = json.loads(raw)
+        except json.JSONDecodeError:
+            return {"decision": "allow"}
+    if not isinstance(entries, list):
+        return {"decision": "allow"}
+    if not entries:
+        # Empty batch on an otherwise flat call: fall through to the flat
+        # check so a co-present TypeName/Model pair is still rewritten.
+        return None
+
+    rewritten, changed = _rewrite_entries(entries, target_model, target_agent, force)
+    if not changed:
+        return {"decision": "allow"}
+    return {
+        "decision": "allow",
+        "overwrite": {key: json.dumps(rewritten) if was_string else rewritten},
+    }
+
+
 def process_payload(
     raw_input: str,
     target_model: str = "flash_lite",
@@ -70,6 +165,10 @@ def process_payload(
     tool_args = tool_call.get("args")
     if not isinstance(tool_args, dict):
         return {"decision": "allow"}
+
+    batched = _batched_overwrite(tool_args, target_model, target_agent, force)
+    if batched is not None:
+        return batched
 
     current_model = tool_args.get("Model")
     is_target_agent = tool_args.get("TypeName") == target_agent
