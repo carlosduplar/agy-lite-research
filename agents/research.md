@@ -8,20 +8,16 @@ mainAgent: false
 max_turns: 15
 timeout_mins: 5
 # Enforced read-only tool inventory. NOTE: `enable_write_tools` /
-# `enable_mcp_tools` are NOT honored by current loaders (tools allowlist +
-# inheritMcp are permissive by default), so they are intentionally absent here:
-# the `tools` allowlist below plus `inheritMcp: false` is the actual guard.
-# Names verified against observed runs: research invokes `read_file` and/or
-# `view_file` plus `send_message` (one run listed a directory via
-# `run_command`, which this allowlist now excludes); `list_dir`,
-# `find_by_name`, and `grep_search` are the platform's file-listing/search
-# tools. Write (`write_file`, `edit_file`, …), shell (`run_command`), and MCP
+# `enable_mcp_tools` are NOT honored by current loaders, so they are
+# intentionally absent here: the `tools` allowlist below plus `inheritMcp: false`
+# is the actual guard. Do not list `view_file` alongside `read_file` (they
+# resolve to the same tool name and fail executor construction). Write
+# (`write_file`, `edit_file`, …), shell (`run_command`), and MCP
 # (`call_mcp_tool`) tools are deliberately absent.
 # Verify with the resolved inventory (`agy agents`) after any edit.
 tools:
   - send_message
   - read_file
-  - view_file
   - list_dir
   - find_by_name
   - grep_search

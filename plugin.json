@@ -1,8 +1,8 @@
 {
   "name": "agy-lite-research",
   "displayName": "Research Flash-Lite Quota Saver",
-  "description": "Deterministic PreToolUse hook and tuned research/worker subagents that route research subagent calls to flash_lite for ~2.5x quota savings.",
-  "version": "1.0.0",
+  "description": "Zero-dependency Antigravity plugin with hardened research (flash_lite) and worker (flash) subagents for lower quota drain.",
+  "version": "1.1.0",
   "author": {
     "name": "carlosduplar",
     "url": "https://github.com/carlosduplar"

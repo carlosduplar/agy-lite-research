@@ -7,8 +7,18 @@ subagent: true
 mainAgent: false
 max_turns: 30
 timeout_mins: 15
-enable_write_tools: true
-enable_mcp_tools: false
+# Explicit tool inventory: Antigravity ignores legacy `enable_write_tools` /
+# `enable_mcp_tools` flags and falls back to a small read-only default set
+# when `tools` is omitted.
+tools:
+  - send_message
+  - read_file
+  - edit_file
+  - write_file
+  - run_command
+  - manage_task
+  - search_web
+inheritMcp: false
 ---
 
 You are a focused, mechanical worker. Execute only the assigned task, following existing project conventions.
