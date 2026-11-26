@@ -89,5 +89,5 @@
   <text x="602" y="284" fill="#94A3B8" font-size="10.5">Combined dispatch: 0.00% General movement.</text>
 
   <!-- Footer -->
-  <text x="32" y="404" fill="#64748B" font-size="11">Scope: Savings apply strictly to delegated research subagent calls (TypeName="research"). Parent turns and worker edits use your selected model.</text>
+  <text x="32" y="404" fill="#64748B" font-size="11">Scope: Chart shows delegated research calls (model: flash_lite). Parent turns use your selected model; worker subagent runs on model: flash.</text>
 </svg>

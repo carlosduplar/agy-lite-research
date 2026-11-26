@@ -46,6 +46,8 @@ Conducted on a **Gemini AI Pro** subscription using fresh, isolated `agy -p --mo
 
 ### 2. `worker` Subagent (`flash` vs. `inherit`)
 
+![Worker Subagent Quota Drain Comparison](./assets/worker-benchmark-savings.svg)
+
 Isolated `agy -p` runs on an identical 4-bug Python fix + 5-test `unittest` verification task (all runs passed 5/5 tests):
 
 | Parent Model | `worker` Model | Duration | Claude 5-Hr Delta | Gemini 5-Hr Delta | Takeaway |
